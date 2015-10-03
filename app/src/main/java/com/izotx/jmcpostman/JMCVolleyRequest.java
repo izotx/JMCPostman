@@ -33,13 +33,11 @@ import java.util.Map;
 public class JMCVolleyRequest {
 
     String mimeType;
-    DataOutputStream dos = null;
+
     String lineEnd = "\r\n";
     String boundary = "apiclient-" + System.currentTimeMillis();
     String twoHyphens = "--";
-    int bytesRead, bytesAvailable, bufferSize;
-    byte[] buffer;
-    int maxBufferSize = 1024 * 1024;
+
 
     String TAG = "VOLLEY";
 
@@ -69,20 +67,12 @@ public class JMCVolleyRequest {
     }
 
 
-    private void buildMultipart(){
-      //  MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-
-
-    }
-
-
-
     public void sendFile(Bitmap bitmap, String token, String contentType, Context context) {
         //Prepare request
-        final Context mContext = context;
+
         final String mToken = token;
         final String mContentType = contentType;
-        final Bitmap mBitmap = bitmap;
+
         mimeType = "multipart/form-data; boundary="+boundary;
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -110,18 +100,10 @@ public class JMCVolleyRequest {
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                String s = "";
-//                try{
-//                    if(error.networkResponse.data != null){
-//                       // s = new String(error.networkResponse.data, "UTF-8");
-//                    }
-//                    Log.i(TAG, error.networkResponse.statusCode+"");
-//                }
-//                catch (Exception e){
-//                    Log.i(TAG, "Network Error "+e.getMessage());
-//                }
+                if( error.networkResponse != null){
+                    Log.i(TAG, "Error "+error.networkResponse.statusCode);
 
-                Log.i(TAG, "Error "+error.networkResponse.statusCode);
+                }
                 Log.i(TAG, "Error "+error.getNetworkTimeMs());
                 Log.i(TAG, "Error "+error.getLocalizedMessage());
             }
@@ -133,38 +115,42 @@ public class JMCVolleyRequest {
 
             @Override
             public byte[] getBody() throws AuthFailureError {
+                //Check the details of sending the post request: http://www.w3.org/TR/html401/interact/forms.html#form-data-set
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                dos = new DataOutputStream(bos);
+                DataOutputStream dos = new DataOutputStream(bos);
+                byte[] buffer;
+                int maxBufferSize = 1024 * 1024;
+                int bytesRead, bytesAvailable, bufferSize;
+                String lineStart = lineEnd+twoHyphens+boundary+lineEnd;
+
+
                 try {
 
-//                   /*Token*/
-//                    dos.writeBytes(lineEnd+twoHyphens + boundary + lineEnd);
-//                    dos.writeBytes("Content-Disposition: form-data; name=\""+ APIKeys.kTokenFieldName.toString()+"\"" + lineEnd);
-//                    dos.writeBytes(lineEnd);
-//                    dos.writeBytes(mToken);
-//
-//                    /*Add Method*/
-//                    dos.writeBytes(lineEnd+twoHyphens + boundary + lineEnd);
-//                    dos.writeBytes("Content-Disposition: form-data; name=\""+ APIKeys.kAddMethodName .toString()+"\"" + lineEnd);
-//                    dos.writeBytes(lineEnd);
-//                    dos.writeBytes("add");
+                   /*Token*/
+                    dos.writeBytes(lineStart);
+                    dos.writeBytes("Content-Disposition: form-data; name=\""+ APIKeys.kTokenFieldName.toString()+"\"" + lineEnd);
+                    dos.writeBytes(lineEnd);
+                    dos.writeBytes(mToken);
+
+                    /*Add Method*/
+                    dos.writeBytes(lineStart);
+                    dos.writeBytes("Content-Disposition: form-data; name=\""+ APIKeys.kAddMethodName .toString()+"\"" + lineEnd);
+                    dos.writeBytes(lineEnd);
+                    dos.writeBytes("add");
 
                     /*Image Type*/
-                    dos.writeBytes(lineEnd+twoHyphens + boundary + lineEnd);
+                    dos.writeBytes(lineStart);
                     dos.writeBytes("Content-Disposition: form-data; name=\""+ APIKeys.kImageTypeName .toString()+"\"" + lineEnd);
                     dos.writeBytes(lineEnd);
                     dos.writeBytes(mContentType);
 
-
-
                    /*Image File*/
-                    dos.writeBytes(lineEnd+twoHyphens + boundary + lineEnd);
+                    dos.writeBytes(lineStart);
                     dos.writeBytes("Content-Disposition: form-data; name=\""+ APIKeys.kImageFieldName.toString()+"\";filename=\""
                             + "ic_action_file_attachment_light.png" + "\"" + lineEnd);
                     dos.writeBytes("Content-Type: image/png");
                     dos.writeBytes(lineEnd);
                     dos.writeBytes(lineEnd);
-
 
                     ByteArrayInputStream fileInputStream = new ByteArrayInputStream(bitmapData);
                     bytesAvailable = fileInputStream.available();
@@ -181,10 +167,8 @@ public class JMCVolleyRequest {
                         bytesRead = fileInputStream.read(buffer, 0, bufferSize);
                     }
 
-//           /*Token*/
-                    // send multipart form data necesssary after file data...
                     dos.writeBytes(lineEnd);
-                    dos.writeBytes(twoHyphens + boundary + lineEnd);
+                    dos.writeBytes(lineEnd+twoHyphens+ boundary +lineEnd);
 
                     return bos.toByteArray();
 
